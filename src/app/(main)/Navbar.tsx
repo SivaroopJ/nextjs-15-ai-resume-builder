@@ -2,7 +2,6 @@
 
 import logo from "@/assets/logo.png";
 import ThemeToggle from "@/components/ThemeToggle";
-//import ThemeToggle from "@/components/ThemeToggle";
 import { UserButton } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { CreditCard } from "lucide-react";
