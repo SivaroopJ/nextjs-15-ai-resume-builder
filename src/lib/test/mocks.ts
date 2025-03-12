@@ -11,3 +11,9 @@ export const mockResume: Partial<ResumeServerData> = {
   projects: [],
   workExperiences: [],
 };
+
+export enum SubscriptionLevel {
+  FREE = "free",
+  PRO = "pro",
+  PREMIUM = "premium",
+}

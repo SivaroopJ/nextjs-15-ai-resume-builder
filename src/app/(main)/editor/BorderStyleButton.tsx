@@ -38,11 +38,11 @@ export default function BorderStyleButton({
   }
 
   const Icon =
-    borderStyle === "square"
-      ? Square
-      : borderStyle === "circle"
-        ? Circle
-        : Squircle;
+  borderStyle === "square"
+    ? (props: React.ComponentProps<"svg">) => <Square data-testid="border-icon" {...props} />
+    : borderStyle === "circle"
+      ? (props: React.ComponentProps<"svg">) => <Circle data-testid="border-icon" {...props} />
+      : (props: React.ComponentProps<"svg">) => <Squircle data-testid="border-icon" {...props} />;
 
 
   return (

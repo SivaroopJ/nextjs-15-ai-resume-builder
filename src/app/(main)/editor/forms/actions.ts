@@ -426,7 +426,7 @@ export async function generateSuggestions(input: GenerateSuggestionsInput) {
     }
     const aiResponse = initialResponse.replace(/<think>.*<\/think>/gs, "").trim();
 
-    if (aiResponse.split(" ").length > 60) {
+    if (aiResponse.split(" ").length > 300) {
       throw new Error("Generated suggestions are too long. Please refine the output.");
     }
 
