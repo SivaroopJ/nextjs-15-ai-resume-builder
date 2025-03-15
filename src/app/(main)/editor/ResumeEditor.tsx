@@ -1,29 +1,40 @@
 "use client";
 
-
 import { useSearchParams } from "next/navigation";
 import { steps } from "./steps";
 import Breadcrumbs from "./Breadcrumbs";
-import Footer from "./Footer"
+import Footer from "./Footer";
 import { useState } from "react";
 import { ResumeValues } from "@/lib/validation";
 import ResumePreviewSection from "./ResumePreviewSection";
-import { cn } from "@/lib/utils";
+import { cn, mapToResumeValues } from "@/lib/utils";
+import useAutoSaveResume from "./useAutoSaveResume";
+import useUnloadWarning from "@/hooks/useUnloadWarning";
+import { ResumeServerData } from "@/lib/types";
 
-export default function ResumeEditor() {
+interface ResumeEditorProps {
+  resumeToEdit : ResumeServerData | null;
+}
+
+export default function ResumeEditor({resumeToEdit} : ResumeEditorProps) {
   const searchParams = useSearchParams();
 
-  const [resumeData, setResumeData] = useState<ResumeValues>({});
+  const [resumeData, setResumeData] = useState<ResumeValues>(
+    resumeToEdit ? mapToResumeValues(resumeToEdit) : {},
+  );
 
   const [showSmResumePreview, setShowSmResumePreview] = useState(false);
 
+  const { isSaving, hasUnsavedChanges } = useAutoSaveResume(resumeData);
+
+  useUnloadWarning(hasUnsavedChanges);
+
   const currentStep = searchParams.get("step") || steps[0].key;
 
-  function setStep(key: string){
-    const newSearchParams = new URLSearchParams(searchParams)
-    newSearchParams.set("step",key)
-    window.history.pushState(null,"",`?${newSearchParams.toString()}`)
-
+  function setStep(key: string) {
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set("step", key);
+    window.history.pushState(null, "", `?${newSearchParams.toString()}`);
   }
   const FormComponent = steps.find(
     (step) => step.key === currentStep,
@@ -39,17 +50,22 @@ export default function ResumeEditor() {
         </p>
       </header>
       <main className="relative grow">
-        <div className="absolute bottom-0 top-0 flex w-full">
-          <div className={cn("w-full  overflow-y-auto p-3 space-y-6 md:w-1/2 md:block",
-            showSmResumePreview && "hidden"
-          )}>
+        <div className="absolute top-0 bottom-0 flex w-full">
+          <div
+            className={cn(
+              "w-full space-y-6 overflow-y-auto p-3 md:block md:w-1/2",
+              showSmResumePreview && "hidden",
+            )}
+          >
             <Breadcrumbs currentStep={currentStep} setCurrentStep={setStep} />
-            {FormComponent && <FormComponent
-              resumeData={resumeData}
-              setResumeData={setResumeData}
-            />}
+            {FormComponent && (
+              <FormComponent
+                resumeData={resumeData}
+                setResumeData={setResumeData}
+              />
+            )}
           </div>
-          <div className="grow md:border-r"/>
+          <div className="grow md:border-r" />
           <ResumePreviewSection
             resumeData={resumeData}
             setResumeData={setResumeData}
@@ -57,10 +73,13 @@ export default function ResumeEditor() {
           />
         </div>
       </main>
-      <Footer currentStep={currentStep} setCurrentStep={setStep}
+      <Footer
+        currentStep={currentStep}
+        setCurrentStep={setStep}
         showSmResumePreview={showSmResumePreview}
-        setShowSmResumePreview={setShowSmResumePreview} 
-        />
+        setShowSmResumePreview={setShowSmResumePreview}
+        isSaving={isSaving}
+      />
     </div>
   );
 }

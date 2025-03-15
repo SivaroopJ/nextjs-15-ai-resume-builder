@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { formatDate } from "date-fns";
 import { Badge } from "./ui/badge";
-import  { BorderStyles } from "@/app/(main)/editor/BorderStyleButton";
+import { BorderStyles } from "@/app/(main)/editor/BorderStyleButton";
 
 interface ResumePreviewProps {
   resumeData: ResumeValues;
@@ -17,9 +17,8 @@ export default function ResumePreview({
   className,
 }: ResumePreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null!); // Ignore null at initialization
-  
-  const { width } = useDimensions(containerRef);
 
+  const { width } = useDimensions(containerRef);
 
   return (
     <div
@@ -35,6 +34,7 @@ export default function ResumePreview({
           zoom: (1 / 794) * width,
         }}
       >
+        {/* <pre>{JSON.stringify(resumeData, null, 2)}</pre> */}
         <PersonalInfoHeader resumeData={resumeData} />
         <SummarySection resumeData={resumeData} />
         <WorkExperienceSection resumeData={resumeData} />
@@ -84,11 +84,11 @@ function PersonalInfoHeader({ resumeData }: ResumeSectionProps) {
           className="aspect-square object-cover"
           style={{
             borderRadius:
-            borderStyle === BorderStyles.SQUARE
-            ? "0px"
-            : borderStyle === BorderStyles.CIRCLE
-              ? "9999px"
-              : "10%",
+              borderStyle === BorderStyles.SQUARE
+                ? "0px"
+                : borderStyle === BorderStyles.CIRCLE
+                  ? "9999px"
+                  : "10%",
           }}
         />
       )}
@@ -100,8 +100,7 @@ function PersonalInfoHeader({ resumeData }: ResumeSectionProps) {
               color: colorHex,
             }}
           >
-            {firstName}
-            {lastName}
+            {firstName} {lastName}
           </p>
           <p
             className="font-medium"
@@ -283,11 +282,11 @@ function SkillsSection({ resumeData }: ResumeSectionProps) {
               style={{
                 backgroundColor: colorHex,
                 borderRadius:
-                borderStyle === BorderStyles.SQUARE
-                ? "0px"
-                : borderStyle === BorderStyles.CIRCLE
-                  ? "9999px"
-                  : "8px",
+                  borderStyle === BorderStyles.SQUARE
+                    ? "0px"
+                    : borderStyle === BorderStyles.CIRCLE
+                      ? "9999px"
+                      : "8px",
               }}
             >
               {skill}
