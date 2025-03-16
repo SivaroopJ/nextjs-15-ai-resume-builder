@@ -35,8 +35,9 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import { CSS } from "@dnd-kit/utilities"
-import { cn } from "@/lib/utils"
+import { CSS } from "@dnd-kit/utilities";
+import { cn } from "@/lib/utils";
+import GenerateWorkExperienceButton from "./GenerateWorkExperienceButton";
 
 export default function WorkExperienceForm({
   resumeData,
@@ -164,12 +165,13 @@ function WorkExperienceItem({
 
   return (
     <div
-      className={cn("bg-background space-y-3 rounded-md border p-3",
-        isDragging && "shadow-xl z-50 cursor-grab relative"
+      className={cn(
+        "bg-background space-y-3 rounded-md border p-3",
+        isDragging && "relative z-50 cursor-grab shadow-xl",
       )}
       ref={setNodeRef} // Reference to move the whole work experience, and not just the grip handle
       style={{
-        transform:CSS.Transform.toString(transform),
+        transform: CSS.Transform.toString(transform),
         transition,
       }} // For animation
     >
@@ -179,6 +181,13 @@ function WorkExperienceItem({
           className="text-muted-foreground size-5 cursor-grab focus:outline-none"
           {...attributes} // spread the attributes here destructured earlier
           {...listeners}
+        />
+      </div>
+      <div className="flex justify-center">
+        <GenerateWorkExperienceButton
+          onWorkExperienceGenerated={(exp) =>
+            form.setValue(`workExperiences.${index}`, exp)
+          }
         />
       </div>
       <FormField
