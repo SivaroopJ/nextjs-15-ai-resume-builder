@@ -27,6 +27,9 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useSubscriptionLevel } from "../../SubscriptionLevelProvider";
+import usePremiumModel from "@/hooks/usePremiumModel";
+import { canUseAITools } from "@/lib/permissions";
 
 
 interface GenerateWorkExperienceButtonProps {
@@ -36,15 +39,23 @@ interface GenerateWorkExperienceButtonProps {
 export default function GenerateWorkExperienceButton({
   onWorkExperienceGenerated,
 }: GenerateWorkExperienceButtonProps) {
-  const [showInputDialog, setShowInputDialog] = useState(false);
+  const subscriptionLevel = useSubscriptionLevel();
+  
+  const premiumModel = usePremiumModel();
 
+  const [showInputDialog, setShowInputDialog] = useState(false);
   return (
     <>
       <Button
         variant="outline"
         type="button"
         //TODO: Block for non-premium users
-        onClick={() => setShowInputDialog(true)}
+        onClick={() => {
+          if(!canUseAITools(subscriptionLevel)){
+            premiumModel.setOpen(true);
+            return;
+          }
+          setShowInputDialog(true)}}
         className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
       >
         <WandSparklesIcon className="size-4" />
