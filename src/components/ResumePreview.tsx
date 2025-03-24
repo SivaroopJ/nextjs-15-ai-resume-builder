@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { formatDate } from "date-fns";
 import { Badge } from "./ui/badge";
 import { BorderStyles } from "@/app/(main)/editor/BorderStyleButton";
+import Link from "next/link";
 
 interface ResumePreviewProps {
   resumeData: ResumeValues;
@@ -38,11 +39,11 @@ export default function ResumePreview({
         ref={contentRef}
         id="resumePreviewContent"
       >
-      
         <PersonalInfoHeader resumeData={resumeData} />
         <SummarySection resumeData={resumeData} />
         <WorkExperienceSection resumeData={resumeData} />
         <EducationSection resumeData={resumeData} />
+        <ProjectSection resumeData={resumeData} />
         <SkillsSection resumeData={resumeData} />
       </div>
     </div>
@@ -140,7 +141,7 @@ function SummarySection({ resumeData }: ResumePreviewProps) {
           borderColor: colorHex,
         }}
       />
-      <div className="space-y-3 break-inside-auto">
+      <div className="break-inside-auto space-y-3">
         <p
           className="text-lg font-semibold"
           style={{
@@ -149,7 +150,7 @@ function SummarySection({ resumeData }: ResumePreviewProps) {
         >
           Professional profile
         </p>
-        <div className="text-sm whitespace-pre-line">{summary}</div>
+        <div className="whitespace-pre-line text-sm">{summary}</div>
       </div>
     </>
   );
@@ -198,7 +199,7 @@ function WorkExperienceSection({ resumeData }: ResumeSectionProps) {
               )}
             </div>
             <p className="text-xs font-semibold">{exp.company}</p>
-            <div className="text-xs whitespace-pre-line">{exp.description}</div>
+            <div className="whitespace-pre-line text-xs">{exp.description}</div>
           </div>
         ))}
       </div>
@@ -249,6 +250,71 @@ function EducationSection({ resumeData }: ResumeSectionProps) {
               )}
             </div>
             <p className="text-xs font-semibold">{edu.school}</p>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function ProjectSection({ resumeData }: ResumeSectionProps) {
+  const { projects, colorHex } = resumeData;
+
+  const projectsNotEmpty = projects?.filter(
+    (pro) => Object.values(pro).filter(Boolean).length > 0,
+  );
+
+  if (!projectsNotEmpty?.length) return null;
+
+  return (
+    <>
+      <hr
+        className="border-2"
+        style={{
+          borderColor: colorHex,
+        }}
+      />
+      <div className="space-y-3">
+        <p
+          className="text-lg font-semibold"
+          style={{
+            color: colorHex,
+          }}
+        >
+          Project
+        </p>
+        {projectsNotEmpty.map((pro, index) => (
+          <div key={index} className="break-inside-auto space-y-1">
+            <div
+              className="flex items-center justify-between text-sm font-semibold"
+              style={{
+                color: colorHex,
+              }}
+            >
+              <span>{pro.title}</span>
+            </div>
+            {pro.link && (
+              <div className="flex items-center gap-2 text-xs">
+                <p className="font-semibold">Link to Project:</p>
+                {/* Use a next link to avoid getting a hydration error/warning in html anchor tag */}
+                <Link
+                  href={pro.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold underline"
+                  style={{ color: colorHex }}
+                >
+                  {pro.link}
+                </Link>
+              </div>
+            )}
+            <div className="whitespace-pre-line text-xs">{pro.description}</div>
+            {pro.skills_used && (
+              <div className="flex items-center gap-2 text-xs">
+                <p className="font-semibold">Skills Used:</p>
+                <div className="whitespace-pre-line">{pro.skills_used}</div>
+              </div>
+            )}
           </div>
         ))}
       </div>

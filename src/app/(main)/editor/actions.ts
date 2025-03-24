@@ -17,6 +17,7 @@ export async function saveResume(values: ResumeValues) {
         photo,
         workExperiences,
         educations,
+        projects,
         ...resumeValues
     } = resumeSchema.parse(values);
 
@@ -101,6 +102,12 @@ export async function saveResume(values: ResumeValues) {
                         endDate: edu.endDate? new Date(edu.endDate) : undefined
                     }))
                 },
+                projects: {
+                    deleteMany: {},
+                    create: projects?.map(pro => ({
+                        ...pro,
+                    }))
+                },
                 updatedAt: new Date(), // This statement might be redundant
             }
         })
@@ -122,6 +129,11 @@ export async function saveResume(values: ResumeValues) {
                         ...edu,
                         startDate: edu.startDate? new Date(edu.startDate) : undefined,
                         endDate: edu.endDate? new Date(edu.endDate) : undefined
+                    }))
+                },
+                projects: {
+                    create: projects?.map(pro => ({
+                        ...pro,
                     }))
                 },
             }

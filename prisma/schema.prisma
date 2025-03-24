@@ -35,6 +35,7 @@ model Resume {
 
   workExperiences WorkExperience[]
   educations      Education[]
+  projects        Project[]
   skills          String[]
 
   createdAt DateTime @default(now())
@@ -78,14 +79,31 @@ model Education {
   @@map("educations")
 }
 
-model UserSubscription {
+model Project {
   id String @id @default(cuid())
-  userId String @unique
-  stripeCustomerId String @unique
-  stripeSubscriptionId String @unique
-  stripePriceId String
+
+  title       String?
+  link        String?
+  description String?
+  skills_used String?
+
+  resumeId String
+  resume   Resume @relation(fields: [resumeId], references: [id]) // resumeId is in an array
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("projects")
+}
+
+model UserSubscription {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  stripeCustomerId       String   @unique
+  stripeSubscriptionId   String   @unique
+  stripePriceId          String
   stripeCurrentPeriodEnd DateTime
-  stripeCancelAtPeiodEnd Boolean @default(false)
+  stripeCancelAtPeiodEnd Boolean  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

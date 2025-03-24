@@ -5,6 +5,7 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { NextRequest } from "next/server";
 import Stripe from "stripe";
 
+// Why not export default function??
 export async function POST(req: NextRequest) {
   try {
     const payload = await req.text();

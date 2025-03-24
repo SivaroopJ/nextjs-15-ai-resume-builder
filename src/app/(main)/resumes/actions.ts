@@ -27,6 +27,17 @@ export async function deleteResume(id : string) {
         await del(resume.photoUrl)
     }
 
+    await prisma.resume.update({
+        where: {
+            id
+        },
+        data: {
+          workExperiences: { deleteMany: {} },
+          educations: { deleteMany: {} },
+          projects: { deleteMany: {} },
+        },
+      });
+
     await prisma.resume.delete({
         where : {
             id
