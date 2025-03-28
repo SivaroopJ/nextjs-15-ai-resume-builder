@@ -29,8 +29,6 @@ export default function ResumeEditor({resumeToEdit} : ResumeEditorProps) {
 
   useUnloadWarning(hasUnsavedChanges);
 
-  const [showSmResumePreview, setShowSmResumePreview] = useState(false);
-
   const currentStep = searchParams.get("step") || steps[0].key;
 
   function setStep(key: string) {
