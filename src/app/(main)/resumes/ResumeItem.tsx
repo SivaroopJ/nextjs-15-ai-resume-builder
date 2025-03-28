@@ -16,7 +16,14 @@ import { MoreVertical, Printer, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { deleteResume } from "./actions";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import LoadingButton from "@/components/LoadingButton";
 import { useReactToPrint } from "react-to-print";
 
@@ -37,6 +44,7 @@ export default function ResumeItem({ resume }: ResumeItemProps) {
   return (
     <div className="group relative rounded-lg border border-muted bg-secondary p-3 transition-colors hover:border-primary">
       <div className="space-y-3">
+        {/* Clickable Title and Metadata */}
         <Link
           href={`/editor?resumeId=${resume.id}`}
           className="inline-block w-full text-center"
@@ -52,17 +60,16 @@ export default function ResumeItem({ resume }: ResumeItemProps) {
             {formatDate(resume.updatedAt, "MMM d, yyyy h:mm a")}
           </p>
         </Link>
-        <Link
-          href={`/editor?resumeId=${resume.id}`}
-          className="relative inline-block w-full"
-        >
+
+        {/* Resume Preview (not wrapped in Link) */}
+        <div className="relative">
           <ResumePreview
             resumeData={mapToResumeValues(resume)}
             contentRef={contentRef}
             className="overflow-hidden shadow-sm transition-shadow group-hover:shadow-lg"
           />
           <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent" />
-        </Link>
+        </div>
       </div>
       <MoreMenu resumeId={resume.id} onPrintClick={reactToPrintFn} />
     </div>
@@ -126,11 +133,10 @@ function DeleteConfirmationDialog({
   open,
   onOpenChange,
 }: DeleteConfirmationDialogProps) {
-
   const [isPending, startTransition] = useTransition();
 
   async function handleDelete() {
-    startTransition(async() => {
+    startTransition(async () => {
       try {
         await deleteResume(resumeId);
         onOpenChange(false);
@@ -138,28 +144,31 @@ function DeleteConfirmationDialog({
         console.error(error);
         toast.error("Something went wrong. Please try again.");
       }
-    })
+    });
   }
 
-  return <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>Delete resume?</DialogTitle>
-        <DialogDescription>
-          This will permanently delete this resume. This action cannot be undone.
-        </DialogDescription>
-      </DialogHeader>
-      <DialogFooter>
-        <LoadingButton
-        variant="destructive"
-        onClick={handleDelete}
-        loading={isPending}>
-          Delete
-        </LoadingButton>
-        <Button variant="secondary" onClick={() => onOpenChange(false)}>
-          Cancel
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete resume?</DialogTitle>
+          <DialogDescription>
+            This will permanently delete this resume. This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <LoadingButton
+            variant="destructive"
+            onClick={handleDelete}
+            loading={isPending}
+          >
+            Delete
+          </LoadingButton>
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }

@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleSessionCompleted(session: Stripe.Checkout.Session) {
+
   const userId = session.metadata?.userId;
 
   if (!userId) {
@@ -99,6 +100,7 @@ async function handleSubscriptionCreatedOrUpdated(subscriptionId: string) {
       },
     });
   }
+
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {

@@ -5,12 +5,15 @@ import {
   generateSummarySchema,
   GenerateWorkExperienceInput,
   generateWorkExperienceSchema,
+  generateProjectsSchema,
   WorkExperience,
 } from "@/lib/validation";
 import groq from "@/lib/deepseek";
 import { auth } from "@clerk/nextjs/server";
 import { getUserSubscriptionLevel } from "@/lib/subscription";
 import { canUseAITools } from "@/lib/permissions";
+import { GenerateProjectsInput, Project } from "@/lib/validation";
+import { GitHubRepo } from "@/lib/validation";
 
 export async function generateSummary(input: GenerateSummaryInput) {
   const { userId } = await auth();
@@ -41,8 +44,6 @@ export async function generateSummary(input: GenerateSummaryInput) {
 - Mention **previous key roles** with impact statements.
 - Concisely list **education and skills** at the end.
 
-**Example Output:**
-"Results-driven Software Developer specializing in Next.js, React.js, and Python. Previously a Senior Data Analyst at Blackrock, excelling in data interpretation. Holds a B.Tech from IITKGP and an MS from MIT. Proficient in C, C++, Python, JavaScript, and TypeScript."
 
     `;
 
@@ -170,4 +171,156 @@ export async function generateWorkExperience(
     startDate: aiResponse.match(/Start date: (\d{4}-\d{2}-\d{2})/)?.[1],
     endDate: aiResponse.match(/End date: (\d{4}-\d{2}-\d{2})/)?.[1],
   } satisfies WorkExperience;
+}
+
+
+export async function generateProjects(input: GenerateProjectsInput): Promise<Project[]> {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  const subscriptionLevel = await getUserSubscriptionLevel(userId);
+
+  if (!canUseAITools(subscriptionLevel)) {
+    throw new Error("Upgrade your subscription to use this feature");
+  }
+
+  const { githubUrl, role } = generateProjectsSchema.parse(input);
+
+  console.log("Input:", { githubUrl, role });
+
+  // Extract username from GitHub URL
+  const usernameMatch = githubUrl.match(/github\.com\/([A-Za-z0-9-]+)(\/|$)/);
+  if (!usernameMatch) {
+    throw new Error("Invalid GitHub URL");
+  }
+  const username = usernameMatch[1];
+
+  // Fetch repositories from GitHub API
+  const reposResponse = await fetch(`https://api.github.com/users/${username}/repos`, {
+    headers: {
+      Accept: "application/vnd.github.v3+json",
+      Authorization: `token ${process.env.GITHUB_API_TOKEN}`, // Optional PAT
+    },
+  });
+
+  if (!reposResponse.ok) {
+    console.error("Repos API error:", reposResponse.status, reposResponse.statusText);
+    throw new Error(`GitHub API error: ${reposResponse.status} - ${reposResponse.statusText}`);
+  }
+
+  const repos: GitHubRepo[] = await reposResponse.json();
+  console.log("Fetched repos:", repos.length);
+
+  // Process all repos (no limit)
+  const repoDetails = await Promise.all(
+    repos.map(async (repo: GitHubRepo) => {
+      const readmeResponse = await fetch(
+        `https://api.github.com/repos/${username}/${repo.name}/readme`,
+        {
+          headers: {
+            Accept: "application/vnd.github.v3+json",
+            Authorization: `token ${process.env.GITHUB_API_TOKEN}`, // Optional PAT
+          },
+        }
+      );
+
+      let readmeContent = repo.description || "No description available";
+      if (readmeResponse.ok) {
+        const readmeData = await readmeResponse.json();
+        readmeContent = Buffer.from(readmeData.content, "base64").toString("utf-8");
+        // Truncate to 750 chars (~200 tokens) to manage token usage
+        readmeContent = readmeContent.slice(0, 750) + (readmeContent.length > 750 ? "..." : "");
+      } else {
+        console.warn(`README fetch failed for ${repo.name}: ${readmeResponse.status}`);
+      }
+
+      return {
+        name: repo.name,
+        html_url: repo.html_url,
+        description: repo.description || "No description",
+        language: repo.language || "Unknown",
+        readme: readmeContent,
+      };
+    })
+  );
+
+  console.log("Repo details:", repoDetails);
+
+  // System message with strict formatting
+  const systemMessage = `
+You are a resume generator AI. Generate project entries for the role "${role}" from GitHub repo data.
+Each entry MUST use this exact format, with no extra text, headers, or <think> blocks:
+Title: <repo name>
+Link: <repo html_url>
+Description:
+- <bullet point 1>
+- <bullet point 2>
+Skills used: <skills from README or repo language>
+
+- Assess relevance to "${role}" using repo name, description, README, and language.
+- For "${role}", look for keywords like JavaScript, React, CSS, HTML, UI, Flutter, frontend (case-insensitive).
+- If no explicit match, infer relevance from language or purpose (e.g., Dart/Flutter for frontend).
+- Use repo language (e.g., "${repoDetails.map(r => r.language).join(", ")}") as fallback for skills if not specified in README.
+- Return an empty string if no projects are relevant.
+  `;
+
+  const userMessage = `
+Generate project entries for "${role}" from these repos:
+${repoDetails.map(repo => `${repo.name}: ${repo.description} | README: ${repo.readme} | Language: ${repo.language} - ${repo.html_url}`).join("\n\n")}
+  `;
+
+  console.log("User message sent to AI:", userMessage);
+
+  const completion = await groq.chat.completions.create({
+    model: "deepseek-r1-distill-llama-70b",
+    messages: [
+      { role: "system", content: systemMessage },
+      { role: "user", content: userMessage },
+    ],
+  });
+
+  const aiResponse = completion.choices[0].message.content;
+
+  if (!aiResponse) {
+    console.error("AI returned no response");
+    throw new Error("Failed to generate AI response");
+  }
+
+  console.log("AI response:", aiResponse);
+
+  // Parse AI response into Project array
+  const projects: Project[] = [];
+  const projectBlocks = aiResponse.split(/\n\s*\n/).filter(Boolean);
+
+  for (const block of projectBlocks) {
+    const titleMatch = block.match(/Title: (.*)/);
+    const linkMatch = block.match(/Link: (.*)/);
+    const descMatch = block.match(/Description:([\s\S]*?)(?=Skills used|$)/);
+    const skillsMatch = block.match(/Skills used: (.*)/);
+
+    const project: Project = {
+      title: titleMatch?.[1] || "",
+      link: linkMatch?.[1] || "",
+      description: descMatch?.[1]?.trim() || "",
+      skills_used: skillsMatch?.[1] || "",
+    };
+
+    // Fallback: Use repo language if skills_used is empty
+    if (project.title && !project.skills_used) {
+      const matchingRepo = repoDetails.find(repo => repo.name === project.title);
+      project.skills_used = matchingRepo?.language || "Unknown";
+    }
+
+    // Only include projects with title and link
+    if (project.title && project.link) {
+      projects.push(project);
+    }
+  }
+
+  console.log("Parsed projects:", projects);
+
+  return projects;
 }

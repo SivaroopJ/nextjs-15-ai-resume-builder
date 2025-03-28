@@ -1,3 +1,4 @@
+// validation.ts
 import { z } from "zod";
 
 export const optionalString = z.string().trim().optional().or(z.literal(""));
@@ -111,7 +112,6 @@ export type ResumeValues = Omit<z.infer<typeof resumeSchema>, "photo"> & {
   photo?: File | string | null;
 };
 
-
 export const generateWorkExperienceSchema = z.object({
   description: z
     .string()
@@ -131,6 +131,24 @@ export const generateSummarySchema = z.object({
   ...skillsSchema.shape,
 });
 
-
-
 export type GenerateSummaryInput = z.infer<typeof generateSummarySchema>;
+
+// New Generate Projects Schema
+export const generateProjectsSchema = z.object({
+  githubUrl: z.string().url().min(1, "GitHub URL is required"),
+  role: z.string().min(1, "Role is required"),
+});
+
+export type GenerateProjectsInput = z.infer<typeof generateProjectsSchema>;
+
+export type Project = NonNullable<
+  z.infer<typeof projectSchema>["projects"]
+>[number];
+
+export interface GitHubRepo {
+  name: string;
+  html_url: string;
+  description: string | null; // Can be null if no description
+  language?: string; // Optional, not always present
+  // Add other fields if needed later
+}

@@ -1,3 +1,4 @@
+// ProjectForm.tsx
 import { Button } from "@/components/ui/button";
 import {
   FormControl,
@@ -12,11 +13,9 @@ import { EditorFormProps } from "@/lib/types";
 import { projectSchema, ProjectValues } from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GripHorizontal } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect } from "react"; // Removed useState since githubUrl isn’t used
 import { Form } from "@/components/ui/form";
 import { useFieldArray, useForm, UseFormReturn } from "react-hook-form";
-// Dnd-kit for the drag and drop feature
-// Following the documentation itself
 import {
   closestCenter,
   DndContext,
@@ -36,7 +35,7 @@ import {
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
-import GenerateWorkExperienceButton from "./GenerateWorkExperienceButton";
+import GenerateProjects from "./GenerateProjects";
 
 export default function ProjectForm({
   resumeData,
@@ -53,11 +52,9 @@ export default function ProjectForm({
     const { unsubscribe } = form.watch(async (values) => {
       const isValid = await form.trigger();
       if (!isValid) return;
-      //Update resume data
       setResumeData({
         ...resumeData,
-        projects:
-          values.projects?.filter((pro) => pro !== undefined) || [],
+        projects: values.projects?.filter((pro) => pro !== undefined) || [],
       });
     });
     return unsubscribe;
@@ -72,12 +69,11 @@ export default function ProjectForm({
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    }), // Necessary because seen in the documentation
+    }),
   );
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    // Move active item to the place of over item
     if (over && active.id !== over.id) {
       const oldIndex = fields.findIndex((field) => field.id === active.id);
       const newIndex = fields.findIndex((field) => field.id === over.id);
@@ -89,18 +85,31 @@ export default function ProjectForm({
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <div className="space-y-1.5 text-center">
-        <h2 className="text-2xl font-semibold">Project</h2>
+        <h2 className="text-2xl font-semibold">Projects</h2>
         <p className="text-muted-foreground text-sm">
           Add as many projects as you like
         </p>
       </div>
       <Form {...form}>
         <form className="space-y-3">
+          <div className="flex justify-center">
+            <GenerateProjects
+              onProjectsGenerated={(projects) => {
+                console.log("Received projects in ProjectForm:", projects);
+                projects.forEach((project) => {
+                  append(project);
+                  console.log("Appended project:", project);
+                });
+                console.log("Updated fields:", fields);
+              }}
+            />
+          </div>
+
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
-            modifiers={[restrictToVerticalAxis]} // To prevent horizontal movement
+            modifiers={[restrictToVerticalAxis]}
           >
             <SortableContext
               items={fields}
@@ -145,21 +154,9 @@ interface ProjectItemProps {
   remove: (index: number) => void;
 }
 
-function ProjectItem({
-  id,
-  form,
-  index,
-  remove,
-}: ProjectItemProps) {
-  const {
-    // Destructure everything
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
+function ProjectItem({ id, form, index, remove }: ProjectItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id });
 
   return (
     <div
@@ -167,26 +164,18 @@ function ProjectItem({
         "bg-background space-y-3 rounded-md border p-3",
         isDragging && "relative z-50 cursor-grab shadow-xl",
       )}
-      ref={setNodeRef} // Reference to move the whole work experience, and not just the grip handle
+      ref={setNodeRef}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
-      }} // For animation
+      }}
     >
       <div className="flex justify-between gap-2">
         <span className="font-semibold">Project {index + 1}</span>
         <GripHorizontal
           className="text-muted-foreground size-5 cursor-grab focus:outline-none"
-          {...attributes} // spread the attributes here destructured earlier
+          {...attributes}
           {...listeners}
-        />
-      </div>
-      {/* This thing is related to AI features, incomplete still */}
-      <div className="flex justify-center">
-        <GenerateWorkExperienceButton
-          onWorkExperienceGenerated={(exp) =>
-            form.setValue(`projects.${index}`, exp)
-          }
         />
       </div>
       <FormField
@@ -207,7 +196,7 @@ function ProjectItem({
         name={`projects.${index}.link`}
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Link to your project (optional, but needed if you want to use AI)</FormLabel>
+            <FormLabel>Link to your project</FormLabel>
             <FormControl>
               <Input {...field} />
             </FormControl>
@@ -232,13 +221,13 @@ function ProjectItem({
         control={form.control}
         name={`projects.${index}.skills_used`}
         render={({ field }) => (
-            <FormItem>
-                <FormLabel>Skills Used</FormLabel>
-                <FormControl>
-                    <Textarea {...field} />
-                </FormControl>
-                <FormMessage />
-            </FormItem>
+          <FormItem>
+            <FormLabel>Skills Used</FormLabel>
+            <FormControl>
+              <Textarea {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
         )}
       />
       <Button type="button" onClick={() => remove(index)} variant="destructive">
