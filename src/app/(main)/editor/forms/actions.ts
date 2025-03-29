@@ -7,6 +7,8 @@ import {
   generateWorkExperienceSchema,
   generateProjectsSchema,
   WorkExperience,
+  GenerateSuggestionsInput,
+  generateSuggestionsSchema,
 } from "@/lib/validation";
 import groq from "@/lib/deepseek";
 import { auth } from "@clerk/nextjs/server";
@@ -323,4 +325,110 @@ ${repoDetails.map(repo => `${repo.name}: ${repo.description} | README: ${repo.re
   console.log("Parsed projects:", projects);
 
   return projects;
+}
+
+export async function generateSuggestions(input: GenerateSuggestionsInput) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  const subscriptionLevel = await getUserSubscriptionLevel(userId);
+
+  if (!canUseAITools(subscriptionLevel)) {
+    throw new Error("Upgrade your subscription to use this feature");
+  }
+
+  const { jobTitle, workExperiences, educations, skills, projects } =
+    generateSuggestionsSchema.parse(input);
+
+  const systemMessage = `
+   You are a professional AI resume writer. Your task is to generate **concise, professional, and structured** resume suggestions based on the provided user data and the role user is going to apply for.
+
+### **Rules for the Suggestions:**
+- If the job title is not specified, **IMMEDIATELY RETURN** with a suggestion to give the jobtitle.
+- Go to the steps given below **ONLY IF** the job title **IS SPECIFIED**.
+- **DO NOT** include any thoughts, explanations, or reasoning.
+- **DO NOT** use "<think>" or any step-by-step breakdown.
+- **ONLY** return the final suggestions as plain text.
+- Keep it **50-60 words** maximum.
+- Given the projects, work experiences, and jobTitle:
+  1. You have to tell which projects or workexperiences are irrelevant for this jobtitle and should be removed.
+  2. You have to tell in which order the relevant projects and workexperiences should be placed on the resume for maximum impact.
+  3. For the above tasks you have to use the information you can get in the workexperiences and projects.
+  4. **DO NOT** fetch the project link and **DO NOT** try to take the input from that.
+  5. **DO NOT** forget to account for the **Skills used** section in the projects section while making a decision.
+    `;
+
+  const userMessage = `
+    Please generate suggestions from this resume data for my projects and work experiences:
+
+    Job title: ${jobTitle || "N/A"}
+
+    Work experience:
+    ${workExperiences
+      ?.map(
+        (exp) => `
+        Position: ${exp.position || "N/A"} at ${exp.company || "N/A"} from ${exp.startDate || "N/A"} to ${exp.endDate || "Present"}
+
+        Description:
+        ${exp.description || "N/A"}
+        `,
+      )
+      .join("\n\n")}
+
+    Educations:
+    ${educations
+      ?.map(
+        (edu) => `
+        Degree: ${edu.degree || "N/A"} at ${edu.school || "N/A"} from ${edu.startDate || "N/A"} to ${edu.endDate || "N/A"}
+        `,
+      )
+      .join("\n\n")}
+
+    Skills:
+    ${skills}
+
+    Projects:
+    ${projects
+      ?.map(
+        (pro) => `
+        title: ${pro.title || "N/A"}
+        Description:
+        ${pro.description || "N/A"}
+        Skills Used: ${pro.skills_used || "N/A"}
+        `
+      )}
+    `;
+
+    console.log("systemMessage", systemMessage);
+    console.log("userMessage", userMessage);
+
+    const completion = await groq.chat.completions.create({
+        model: "deepseek-r1-distill-llama-70b",
+        messages: [
+            {
+                role: "system",
+                content: systemMessage
+            },
+            {
+                role: "user",
+                content: userMessage
+            }
+        ]
+    });
+
+    const initialResponse = completion.choices[0].message.content;
+
+    if(!initialResponse) {
+        throw new Error("Failed to generate AI response");
+    }
+    const aiResponse = initialResponse.replace(/<think>.*<\/think>/gs, "").trim();
+
+    if (aiResponse.split(" ").length > 60) {
+      throw new Error("Generated suggestions are too long. Please refine the output.");
+    }
+
+    return aiResponse;
 }

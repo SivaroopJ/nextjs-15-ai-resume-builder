@@ -95,6 +95,12 @@ export const summarySchema = z.object({
 
 export type SummaryValues = z.infer<typeof summarySchema>;
 
+export const suggestionsSchema = z.object({
+  suggestions: optionalString,
+});
+
+export type SuggestionsValues = z.infer<typeof suggestionsSchema>;
+
 export const resumeSchema = z.object({
   ...generalInfoSchema.shape,
   ...personalInfoSchema.shape,
@@ -103,6 +109,7 @@ export const resumeSchema = z.object({
   ...projectSchema.shape,
   ...skillsSchema.shape,
   ...summarySchema.shape,
+  ...suggestionsSchema.shape,
   colorHex: optionalString,
   borderStyle: optionalString,
 });
@@ -152,3 +159,13 @@ export interface GitHubRepo {
   language?: string; // Optional, not always present
   // Add other fields if needed later
 }
+
+export const generateSuggestionsSchema = z.object({
+  jobTitle: optionalString,
+  ...workExperienceSchema.shape,
+  ...projectSchema.shape,
+  ...educationSchema.shape,
+  ...skillsSchema.shape,
+});
+
+export type GenerateSuggestionsInput = z.infer<typeof generateSuggestionsSchema>;
