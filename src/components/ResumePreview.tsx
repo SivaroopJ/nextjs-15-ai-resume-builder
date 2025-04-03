@@ -281,7 +281,7 @@ function ProjectSection({ resumeData }: ResumeSectionProps) {
             color: colorHex,
           }}
         >
-          Project
+          Projects
         </p>
         {projectsNotEmpty.map((pro, index) => (
           <div key={index} className="break-inside-auto space-y-1">
