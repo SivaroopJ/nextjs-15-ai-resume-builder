@@ -140,7 +140,6 @@ export const generateSummarySchema = z.object({
 
 export type GenerateSummaryInput = z.infer<typeof generateSummarySchema>;
 
-// New Generate Projects Schema
 export const generateProjectsSchema = z.object({
   githubUrl: z.string().url().min(1, "GitHub URL is required"),
   role: z.string().min(1, "Role is required"),

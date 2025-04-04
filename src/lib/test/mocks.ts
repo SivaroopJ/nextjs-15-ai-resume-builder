@@ -1,4 +1,4 @@
-// lib/test/mocks.ts
+
 import { ResumeServerData } from "@/lib/types";
 
 export const mockResume: Partial<ResumeServerData> = {
