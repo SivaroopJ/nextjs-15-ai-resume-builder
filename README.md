@@ -2,9 +2,9 @@
 
 A smart and user-friendly resume builder, built in next.js, that helps users create impactful resumes using AI. Premium users can access advanced features such as AI-generated professional summaries, work experience descriptions, project details from GitHub links, and tailored suggestions based on the job title.
 
-Project By :
-23CS10027 : Jay Jani
-23CS10067 : Sivaroop J
+## Project By :
+**23CS10027** : Jay Jani <br />
+**23CS10067** : Sivaroop J <br />
 
 ## Getting Started
 
